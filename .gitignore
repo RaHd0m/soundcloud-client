@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Локальные данные DanyaCloud (история прослушиваний, лайки, client_id).
+# Приложение хранит их в %APPDATA%\SCClient — сюда они попасть не должны.
+library.json
+client_id.json
+*.json.local
+
+# VS Code / OS
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+desktop.ini
+
+# Сборка
+dist/
+build/
+*.spec
