@@ -244,9 +244,14 @@ class PlayerBar(QWidget):
         self._btn_prev = self._pbtn("prev", self._player.prev)
         self._btn_play = self._pbtn("play", self._player.toggle, big=True)
         self._btn_next = self._pbtn("next", self._player.next)
-        for b in (self._btn_prev, self._btn_play, self._btn_next):
+        self._btn_repeat = self._pbtn("repeat", self._cycle_repeat)
+        for b in (self._btn_prev, self._btn_play, self._btn_next, self._btn_repeat):
             controls.addWidget(b)
         controls.addStretch()
+
+        # синхронизируем иконку/подсказку с режимом повтора
+        self._player.repeatChanged.connect(self._on_repeat)
+        self._on_repeat(self._player.repeat_mode())
         mid.addLayout(controls)
 
         seek_row = QHBoxLayout()
@@ -342,6 +347,23 @@ class PlayerBar(QWidget):
     def _on_playing(self, playing: bool) -> None:
         self._btn_play.setIcon(appicons.icon("pause" if playing else "play", 20,
                                              "#14161d"))
+
+    # ------------------------------------------------------------ повтор
+
+    def _cycle_repeat(self) -> None:
+        self._player.set_repeat_mode(
+            {"off": "all", "all": "one", "one": "off"}[self._player.repeat_mode()]
+        )
+
+    def _on_repeat(self, mode: str) -> None:
+        self._btn_repeat.setIcon(appicons.icon(
+            "repeat_one" if mode == "one" else "repeat", 14,
+            "#ff7a33" if mode != "off" else appicons.DEFAULT))
+        self._btn_repeat.setToolTip({
+            "off": "Повтор выключен (клик — повторять всю очередь)",
+            "all": "Повтор: вся очередь (клик — повторять один трек)",
+            "one": "Повтор: один трек (клик — выключить)",
+        }[mode])
 
     def _on_pos(self, pos: int) -> None:
         self._t_cur.setText(fmt_time(pos))

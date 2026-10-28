@@ -104,6 +104,29 @@ def icon(name: str, size: int = 20, color: str = DEFAULT) -> QIcon:
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawArc(QRectF(56, 30, 24, 40), -55, 110)
         p.drawArc(QRectF(60, 20, 38, 60), -55, 110)
+    elif name in ("repeat", "repeat_one"):
+        # кольцо-петелька с разрывом на правой стороне и стрелкой
+        p.setPen(QPen(QColor(color), 9, Qt.PenStyle.SolidLine,
+                      Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRoundedRect(QRectF(26, 22, 48, 56), 15, 15)
+        # разрыв: вырезаем кусок правой стороны (режем альфу, а не закрашиваем)
+        p.save()
+        p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+        p.fillRect(QRectF(74, 43, 16, 14), QColor(0, 0, 0, 0))
+        p.restore()
+        # стрелка, ведущая в разрыв (поток по часовой — вниз)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(color))
+        p.drawPolygon(QPolygonF([QPointF(64, 37), QPointF(90, 37), QPointF(77, 52)]))
+        if name == "repeat_one":
+            # цифра «1» — линиями, без drawText (в headless нет шрифтов)
+            pen1 = QPen(QColor(color), 7, Qt.PenStyle.SolidLine,
+                        Qt.PenCapStyle.RoundCap)
+            p.setPen(pen1)
+            p.drawLine(QPointF(50, 40), QPointF(50, 60))
+            p.drawLine(QPointF(44, 46), QPointF(50, 40))
+            p.drawLine(QPointF(45, 60), QPointF(55, 60))
     elif name == "trash":
         p.setPen(QPen(QColor(color), 7, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         p.setBrush(Qt.BrushStyle.NoBrush)

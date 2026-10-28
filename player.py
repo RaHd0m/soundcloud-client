@@ -18,6 +18,7 @@ class Player(QObject):
     positionChanged = Signal("qlonglong")
     durationChanged = Signal("qlonglong")
     volumeChanged = Signal(int)        # 0..100
+    repeatChanged = Signal(str)        # "off" | "all" | "one"
     error = Signal(str)
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
@@ -36,6 +37,7 @@ class Player(QObject):
         self._queue: List[Track] = []
         self._idx = -1
         self._token = 0  # защита от устаревших ответов при быстрой переключке
+        self._repeat = "off"
 
     # ------------------------------------------------------------- stale
 
@@ -137,6 +139,18 @@ class Player(QObject):
         """Текущая громкость 0..1 (для инициализации слайдеров)."""
         return self._audio.volume()
 
+    # ------------------------------------------------------------- повтор
+
+    def repeat_mode(self) -> str:
+        return self._repeat
+
+    def set_repeat_mode(self, mode: str) -> None:
+        if mode not in ("off", "all", "one"):
+            mode = "off"
+        if mode != self._repeat:
+            self._repeat = mode
+            self.repeatChanged.emit(mode)
+
     # ----------------------------------------------------------- события
 
     def _on_playback_state(self, state) -> None:
@@ -144,6 +158,14 @@ class Player(QObject):
 
     def _on_media_status(self, status) -> None:
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            if self._repeat == "one":
+                # повтор одного трека: закольцовываем тот же медиа-поток
+                self._media.setPosition(0)
+                self._media.play()
+                return
+            if self._repeat == "all" and self._idx + 1 >= len(self._queue):
+                self._play_at(0)  # очередь закончилась — начинаем сначала
+                return
             self.next()
 
     def _on_media_error(self, err, msg) -> None:

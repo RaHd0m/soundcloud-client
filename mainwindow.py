@@ -37,6 +37,12 @@ class MainWindow(QMainWindow):
         self.storage = Storage()
         self.ctx = Ctx(self.player, self.storage, self.navigate, self.go_back)
 
+        # режим повтора живёт в library.json между запусками
+        self.player.set_repeat_mode(self.storage.setting("repeat", "off"))
+        self.player.repeatChanged.connect(
+            lambda m: self.storage.set_setting("repeat", m)
+        )
+
         root = QWidget()
         root.setObjectName("Root")
         rv = QVBoxLayout(root)

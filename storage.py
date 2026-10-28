@@ -17,6 +17,7 @@ class Storage:
     def __init__(self) -> None:
         self._likes: Dict[int, dict] = {}
         self._recents: List[dict] = []
+        self._settings: Dict[str, object] = {}
         self._load()
 
     # ------------------------------------------------------------ база
@@ -33,11 +34,13 @@ class Storage:
             except (TypeError, ValueError):
                 continue
         self._recents = list(data.get("recents") or [])
+        self._settings = dict(data.get("settings") or {})
 
     def save(self) -> None:
         data = {
             "likes": {str(k): v for k, v in self._likes.items()},
             "recents": self._recents[:200],
+            "settings": self._settings,
         }
         try:
             CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -82,3 +85,12 @@ class Storage:
 
     def recents(self) -> List[Track]:
         return [Track.from_brief(b) for b in self._recents]
+
+    # ----------------------------------------------------------- настройки
+
+    def setting(self, key: str, default=None):
+        return self._settings.get(key, default)
+
+    def set_setting(self, key: str, value) -> None:
+        self._settings[key] = value
+        self.save()
