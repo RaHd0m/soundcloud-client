@@ -5,8 +5,7 @@ from __future__ import annotations
 
 from typing import List
 
-from PySide6.QtCore import QPropertyAnimation, Qt
-from PySide6.QtCore import QEasingCurve, QAbstractAnimation
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QAbstractAnimation, QPoint, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
@@ -177,7 +176,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------- анимация появления
 
     def _fade_in(self, page: QWidget) -> None:
-        """Мягкое появления страницы при переходе (170 мс, OutCubic)."""
+        """Переход: страница проявляется (250 мс) и мягко въезжает снизу (14px)."""
         if page is None:
             return
         if page.graphicsEffect() is not None:
@@ -185,13 +184,23 @@ class MainWindow(QMainWindow):
         eff = QGraphicsOpacityEffect(page)
         eff.setOpacity(0.0)
         page.setGraphicsEffect(eff)
-        anim = QPropertyAnimation(eff, b"opacity", page)
-        anim.setDuration(170)
-        anim.setStartValue(0.0)
-        anim.setEndValue(1.0)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        anim.finished.connect(lambda: page.setGraphicsEffect(None))
-        anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+        op = QPropertyAnimation(eff, b"opacity", page)
+        op.setDuration(250)
+        op.setStartValue(0.0)
+        op.setEndValue(1.0)
+        op.setEasingCurve(QEasingCurve.Type.OutCubic)
+        op.finished.connect(lambda: page.setGraphicsEffect(None))
+        # скольжение: из pos + (0, 14) в базовую позицию
+        target = page.pos()
+        slide = QPropertyAnimation(page, b"pos", page)
+        slide.setDuration(250)
+        slide.setStartValue(QPoint(target.x(), target.y() + 14))
+        slide.setEndValue(target)
+        slide.setEasingCurve(QEasingCurve.Type.OutCubic)
+        slide.finished.connect(lambda: (page.move(target),
+                                        page.setGraphicsEffect(None)))
+        op.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+        slide.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
 
     # ---------------------------------------------------------- навигация
 
