@@ -149,7 +149,11 @@ class MainWindow(QMainWindow):
             return  # ничего менять не нужно
         old = getattr(self, "_bar_anim", None)
         if old is not None:
-            old.stop()
+            try:
+                old.stop()
+            except RuntimeError:
+                pass  # C++-объект уже удалён (DeleteWhenStopped)
+            self._bar_anim = None
         eff = bar.graphicsEffect()
         if not isinstance(eff, QGraphicsOpacityEffect):
             eff = QGraphicsOpacityEffect(bar)
