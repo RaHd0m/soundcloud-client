@@ -5,9 +5,11 @@ from __future__ import annotations
 
 from typing import List
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPropertyAnimation, Qt
+from PySide6.QtCore import QEasingCurve, QAbstractAnimation
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -98,6 +100,14 @@ class MainWindow(QMainWindow):
         nav("♥  Медиатека", lambda: self.navigate(pg.CollectionPage(self.ctx, "likes")))
         nav("↺  Недавно", lambda: self.navigate(pg.CollectionPage(self.ctx, "recents")))
         sw.addStretch()
+
+        # --- настройка фона: мягкий (Mica) / сильный (акрил) блюр
+        self._blur_btn = QToolButton()
+        self._blur_btn.setObjectName("NavButton")
+        self._blur_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._refresh_blur_btn()
+        self._blur_btn.clicked.connect(self._cycle_blur)
+        sw.addWidget(self._blur_btn)
         ch.addWidget(sidebar)
 
         self._stack = QStackedWidget()
@@ -127,6 +137,26 @@ class MainWindow(QMainWindow):
         self._search.setFocus()
         self._search.selectAll()
 
+    # ---------------------------------------------------------- фон окна
+
+    def blur_setting(self) -> str:
+        try:
+            import storage
+            return "light" if storage.read_setting("blur", "light") == "light" else "strong"
+        except Exception:
+            return "light"
+
+    def _refresh_blur_btn(self) -> None:
+        light = self.blur_setting() == "light"
+        self._blur_btn.setText("🌾  Блюр: мягкий" if light else "🪟  Блюр: сильный")
+        self._blur_btn.setToolTip(
+            "Размытие фона окна (применится после перезапуска)")
+
+    def _cycle_blur(self) -> None:
+        new = "strong" if self.blur_setting() == "light" else "light"
+        self.storage.set_setting("blur", new)
+        self._refresh_blur_btn()
+
     def _do_search(self) -> None:
         q = self._search.text().strip()
         if not q:
@@ -134,13 +164,58 @@ class MainWindow(QMainWindow):
         self.navigate(pg.SearchPage(self.ctx, q))
 
     def _sync_bar_visibility(self) -> None:
-        """В большом плеере нижняя панель не нужна — иконки не дублируются."""
+        """В большом плеере нижняя панель не нужна — иконки не дублируются.
+        Показ/скрытие анимированные (мягкое появление/растворение)."""
         cur = self._stack.currentWidget()
-        if cur is None:
-            self._bar.show()
+        full = cur is not None and isinstance(cur, pg.PlayerPage)
+        self._animate_bar(not full)
+
+    def _animate_bar(self, show: bool) -> None:
+        bar = self._bar
+        already = bar.isVisible() and bar.graphicsEffect() is None
+        if already == show:
+            return  # ничего менять не нужно
+        old = getattr(self, "_bar_anim", None)
+        if old is not None:
+            old.stop()
+        eff = bar.graphicsEffect()
+        if not isinstance(eff, QGraphicsOpacityEffect):
+            eff = QGraphicsOpacityEffect(bar)
+            bar.setGraphicsEffect(eff)
+        anim = QPropertyAnimation(eff, b"opacity", bar)
+        anim.setDuration(150)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        if show:
+            bar.setVisible(True)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.finished.connect(lambda: bar.setGraphicsEffect(None))
+        else:
+            anim.setStartValue(1.0)
+            anim.setEndValue(0.0)
+            anim.finished.connect(
+                lambda: (bar.setGraphicsEffect(None), bar.setVisible(False)))
+        anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+        self._bar_anim = anim
+
+    # ------------------------------------------------- анимация появления
+
+    def _fade_in(self, page: QWidget) -> None:
+        """Мягкое появления страницы при переходе (170 мс, OutCubic)."""
+        if page is None:
             return
-        full = isinstance(cur, pg.PlayerPage)
-        self._bar.setVisible(not full)
+        if page.graphicsEffect() is not None:
+            return  # анимация ещё идёт
+        eff = QGraphicsOpacityEffect(page)
+        eff.setOpacity(0.0)
+        page.setGraphicsEffect(eff)
+        anim = QPropertyAnimation(eff, b"opacity", page)
+        anim.setDuration(170)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        anim.finished.connect(lambda: page.setGraphicsEffect(None))
+        anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
 
     # ---------------------------------------------------------- навигация
 
@@ -150,6 +225,7 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(page)
         self._history.append(page)
         self._stack.setCurrentWidget(page)
+        self._fade_in(page)
         self._back.setEnabled(True)
         # не даём стеку разрастаться (самая старая «верхняя» страница выкидывается)
         while len(self._history) > 15:
@@ -167,4 +243,5 @@ class MainWindow(QMainWindow):
         self._stack.removeWidget(cur)
         cur.deleteLater()
         self._stack.setCurrentWidget(self._history[-1])
+        self._fade_in(self._history[-1])
         self._back.setEnabled(len(self._history) > 1)

@@ -13,6 +13,17 @@ from sc_api import CONFIG_DIR
 FILE = CONFIG_DIR / "library.json"
 
 
+def read_setting(key: str, default=None):
+    """Прочитать настройку из library.json без создания Storage
+    (полезно до создания QApplication)."""
+    try:
+        data = json.loads(FILE.read_text("utf-8"))
+    except Exception:
+        return default
+    val = (data.get("settings") or {}).get(key)
+    return val if val is not None else default
+
+
 class Storage:
     def __init__(self) -> None:
         self._likes: Dict[int, dict] = {}

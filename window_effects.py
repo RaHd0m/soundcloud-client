@@ -95,10 +95,12 @@ def _set_dark_titlebar(dwm, hwnd: int) -> None:
             continue
 
 
-def _try_system_backdrop(dwm, hwnd: int) -> str:
+def _try_system_backdrop(dwm, hwnd: int, kinds=((DWMSBT_TRANSIENTWINDOW, "acrylic"),
+                                               (DWMSBT_MAINWINDOW, "mica"))) -> str:
     """Акрил/Mica официально поддерживаются с Win11 22H2 (build 22621).
     Критично: DWA_SYSTEMBACKDROP_TYPE рисуется только там, куда «втянута»
-    рамка окна — поэтому сначала DwmExtendFrameIntoClientArea(-1,-1,-1,-1)."""
+    рамка окна — поэтому сначала DwmExtendFrameIntoClientArea(-1,-1,-1,-1).
+    kinds — какие backdrop пробовать и в каком порядке."""
     if windows_build() < 22621:
         return ""
     margins = MARGINS(-1, -1, -1, -1)
@@ -109,7 +111,7 @@ def _try_system_backdrop(dwm, hwnd: int) -> str:
         ) == 0
     except Exception:
         extended = False
-    for bt, name in ((DWMSBT_TRANSIENTWINDOW, "acrylic"), (DWMSBT_MAINWINDOW, "mica")):
+    for bt, name in kinds:
         val = ctypes.c_int(bt)
         try:
             if dwm.DwmSetWindowAttribute(
@@ -184,10 +186,14 @@ def transparency_enabled() -> bool:
 
 
 def apply_danya_window_effects(window, tint_alpha: int = 0x66,
-                               tint_color: int = 0x000000) -> str:
+                               tint_color: int = 0x000000,
+                               blur: str = "strong") -> str:
     """Включает блюр/прозрачность. Возвращает применённый режим:
-    'acrylic' | 'mica' | 'acrylic_wca' | 'transparency_disabled' |
-    'none' (или 'unsupported' не-Windows)."""
+    'acrylic' | 'mica' | 'glass' | 'acrylic_wca' | 'transparency_disabled' |
+    'none' (или 'unsupported' не-Windows).
+
+    blur: 'strong' — глубокое размытие (BlurBehind), 'light' — мягкий Mica
+    (почти без блюра; если система его не применила — откат на стекло)."""
     if sys.platform != "win32":
         return "unsupported"
     try:
@@ -217,15 +223,25 @@ def apply_danya_window_effects(window, tint_alpha: int = 0x66,
 
     # 1) нейтральное стекло без системной синевы (уточнено сэмплами на 26300)
     mode = ""
-    if windows_build() >= 22000:
+    if blur != "light" and windows_build() >= 22000:
         mode = _try_blur_behind(dwm, hwnd)
         if mode:
             return mode
 
-    # 2) системный Backdrop (академический путь; на части билдов ничего не даёт)
-    mode = _try_system_backdrop(dwm, hwnd)
+    # 2) системный Backdrop: 'light' хочет только Mica (почти без блюра),
+    #    'strong' не брезгует и акрилом (на части билдов всё равно пусто)
+    kinds = ([(DWMSBT_MAINWINDOW, "mica")] if blur == "light" else
+             [(DWMSBT_TRANSIENTWINDOW, "acrylic"), (DWMSBT_MAINWINDOW, "mica")])
+    mode = _try_system_backdrop(dwm, hwnd, tuple(kinds))
     if mode:
         return mode
+
+    # 2b) 'light' не сработал — откатываемся на обычное стекло, вдруг Mica
+    #     не применился системой
+    if blur == "light" and windows_build() >= 22000:
+        mode = _try_blur_behind(dwm, hwnd)
+        if mode:
+            return mode
 
     # 3) легаси-акрил с настраиваемым цветом (Win10)
     mode = _try_wca_acrylic(user32, hwnd, tint_alpha, tint_color)
