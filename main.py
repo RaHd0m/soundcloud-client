@@ -58,7 +58,9 @@ def main() -> int:
     try:
         import window_effects
         import storage
-        blur = "light" if storage.read_setting("blur", "light") == "light" else "strong"
+        blur = storage.read_setting("blur", "glass")
+        if blur not in ("glass", "flat"):
+            blur = "glass"  # старые значения 'light'/'strong' переводим в стекло
         mode = window_effects.apply_danya_window_effects(win, blur=blur)
         if mode in ("none", "unsupported"):
             # убираем прозрачность, иначе было бы «чёрное окно-дырка»

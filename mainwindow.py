@@ -142,18 +142,19 @@ class MainWindow(QMainWindow):
     def blur_setting(self) -> str:
         try:
             import storage
-            return "light" if storage.read_setting("blur", "light") == "light" else "strong"
+            val = storage.read_setting("blur", "glass")
+            return val if val in ("glass", "flat") else "glass"
         except Exception:
-            return "light"
+            return "glass"
 
     def _refresh_blur_btn(self) -> None:
-        light = self.blur_setting() == "light"
-        self._blur_btn.setText("🌾  Блюр: мягкий" if light else "🪟  Блюр: сильный")
-        self._blur_btn.setToolTip(
-            "Размытие фона окна (применится после перезапуска)")
+        curt = self.blur_setting() == "flat"
+        self._blur_btn.setText("🪟  Блюр: вкл" if not curt
+                               else "▦  Блюр: выкл — чёткий фон")
+        self._blur_btn.setToolTip("Размытие фона окна (применится после перезапуска)")
 
     def _cycle_blur(self) -> None:
-        new = "strong" if self.blur_setting() == "light" else "light"
+        new = "glass" if self.blur_setting() == "flat" else "flat"
         self.storage.set_setting("blur", new)
         self._refresh_blur_btn()
 
