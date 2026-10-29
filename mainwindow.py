@@ -29,7 +29,7 @@ from widgets import PlayerBar
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("DanyaCloud")
+        self.setWindowTitle("SoundCloud")
         self.setMinimumSize(940, 620)
         # прозрачное «стекло» (эффекты фона подключаются после show() в main.py)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         sw = QVBoxLayout(sidebar)
         sw.setContentsMargins(10, 8, 10, 10)
         sw.setSpacing(2)
-        logo = QLabel('<span style="color:#ff5500">danya</span>'
+        logo = QLabel('<span style="color:#ff5500">sound</span>'
                       '<span style="color:#ffffff">cloud</span>')
         logo.setTextFormat(Qt.TextFormat.RichText)
         logo.setObjectName("Logo")

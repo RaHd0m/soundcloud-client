@@ -34,7 +34,7 @@ def main() -> int:
         try:
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "DanyaCloud.Client.1"
+                "SoundCloudClient.Client.1"
             )
         except Exception:
             pass
@@ -42,7 +42,7 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     app.setStyleSheet(theme.QSS)
-    app.setApplicationName("DanyaCloud")
+    app.setApplicationName("SoundCloud Client")
 
     from PySide6.QtGui import QIcon
     from pathlib import Path
@@ -59,14 +59,14 @@ def main() -> int:
     # оставлена исторически и игнорируется.
     try:
         import window_effects
-        mode = window_effects.apply_danya_window_effects(win, blur="glass")
+        mode = window_effects.apply_window_effects(win, blur="glass")
         if mode in ("none", "unsupported"):
             # убираем прозрачность, иначе было бы «чёрное окно-дырка»
             win.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         elif mode == "transparency_disabled":
             print("== Прозрачность окна отключена в Windows! ==\n"
                   "  Параметры → Персонализация → Цвета → «Эффекты прозрачности» → ВКЛ,\n"
-                  "  затем перезапусти DanyaCloud.")
+                  "  затем перезапусти SoundCloud Client.")
             win.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         print(f"Режим фона окна: {mode}")
     except Exception as e:

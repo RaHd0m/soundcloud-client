@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Генерирует icon.ico/icon.png: тёмный скруглёный квадрат, оранжевое облако,
-белая «D» слева. Запуск: python make_icon.py"""
+"""Генерирует icon.ico/icon.png: тёмный скруглёный квадрат + оранжевое облако.
+Запуск: python make_icon.py"""
 
 from __future__ import annotations
 
@@ -37,31 +37,17 @@ def main() -> int:
     p.setClipPath(bg)
     p.fillPath(bg, grad)
 
-    # оранжевое облако (справа): скруглёное основание + круглые бугры
+    # оранжевое облако (по центру): скруглёное основание + круглые бугры
     cloud = QPainterPath()
-    body = QRect(104, 128, 122, 64)
+    body = QRect(56, 128, 144, 64)
     cloud.addRoundedRect(body, 32, 32)
-    cloud.addEllipse(96, 96, 78, 78)
-    cloud.addEllipse(148, 76, 100, 100)
+    cloud.addEllipse(48, 96, 78, 78)
+    cloud.addEllipse(104, 76, 100, 100)
     cloud.setFillRule(Qt.FillRule.WindingFill)  # объединяем фигуры без дыр
-    cgrad = QLinearGradient(96, 80, 236, 190)
+    cgrad = QLinearGradient(48, 80, 216, 190)
     cgrad.setColorAt(0.0, QColor("#ff7a1f"))
     cgrad.setColorAt(1.0, QColor("#e63c00"))
-    p.fillPath(cloud.translated(24, 46), cgrad)
-
-    # белая «D» слева — чистая геометрия (в offscreen нет шрифтов)
-    left, top, bottom = 26, 58, 198
-    right = left + 96  # 122
-    outer = QPainterPath()
-    outer.moveTo(left, top)
-    outer.lineTo(right, top)
-    # правая сторона — полный полукруг вниз (по часовой)
-    outer.arcTo(QRectF(right - 70, top, 140, bottom - top), 90, -180)
-    outer.lineTo(left, bottom)
-    outer.closeSubpath()
-    inner = QPainterPath()
-    inner.addEllipse(60, 90, 46, 76)
-    p.fillPath(outer.subtracted(inner), QColor("#f2f2f6"))
+    p.fillPath(cloud.translated(4, 18), cgrad)
 
     p.end()
     ok = pm.save("icon.ico", "ICO")

@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0"
-start "DanyaCloud" pythonw.exe main.py
+start "SoundCloud Client" pythonw.exe main.py

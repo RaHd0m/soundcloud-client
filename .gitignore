@@ -5,7 +5,7 @@ __pycache__/
 .venv/
 venv/
 
-# Локальные данные DanyaCloud (история прослушиваний, лайки, client_id).
+# Локальные данные приложения (история прослушиваний, лайки, client_id).
 # Приложение хранит их в %APPDATA%\SCClient — сюда они попасть не должны.
 library.json
 client_id.json

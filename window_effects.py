@@ -185,7 +185,7 @@ def transparency_enabled() -> bool:
         return True
 
 
-def apply_danya_window_effects(window, tint_alpha: int = 0x66,
+def apply_window_effects(window, tint_alpha: int = 0x66,
                                tint_color: int = 0x000000,
                                blur: str = "glass") -> str:
     """Включает блюр/прозрачность. Возвращает применённый режим:
