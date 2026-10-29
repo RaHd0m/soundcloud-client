@@ -15,7 +15,6 @@ import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote
 
 import requests
 
@@ -193,39 +192,6 @@ class SoundCloudAPI:
             full = self._get("/tracks", {"ids": ",".join(ids[:80])})
             by_id = {t.get("id"): t for t in (full if isinstance(full, list) else [])}
             data["tracks"] = [by_id[int(i)] for i in map(int, ids) if int(i) in by_id]
-        return data
-
-    # ------------------------------------------------------------- радио
-
-    def _expand_ids(self, ids: list) -> list:
-        """Полные треки по списку id: `/tracks?ids=…` пачками по 80."""
-        full: List[Any] = []
-        for i in range(0, len(ids), 80):
-            chunk = ids[i : i + 80]
-            res = self._get("/tracks", {"ids": ",".join(map(str, chunk))})
-            if isinstance(res, list):
-                full.extend(res)
-        by_id = {t.get("id"): t for t in full if isinstance(t, dict) and t.get("id")}
-        return [by_id[i] for i in ids if i in by_id]
-
-    def mixed_selections(self, limit: int = 20) -> List[dict]:
-        """Селекции Discover'а SoundCloud: подборки-миксы + «Trending by genre».
-
-        У каждой селекции items уже вшиты в ответ (items.collection).
-        """
-        data = self._get("/mixed-selections", {"limit": limit})
-        return [s for s in (data.get("collection") or []) if isinstance(s, dict)]
-
-    def system_playlist(self, urn: str) -> dict:
-        """Жанровые подборки (system-playlist): например trending-by-genre:trap.
-
-        Треки приходят заглушками {id, kind} — разворачиваем в полные.
-        """
-        data = self._get("/system-playlists/" + quote(urn, safe=""))
-        stubs = data.get("tracks") or []
-        ids = [t.get("id") for t in stubs if isinstance(t, dict) and t.get("id")]
-        if ids:
-            data["tracks"] = self._expand_ids(ids)
         return data
 
     def stream_url(self, track: dict) -> str:

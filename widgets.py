@@ -138,16 +138,6 @@ class TrackRow(_Row):
         self._refresh_heart()
         self._lay.addWidget(heart)
 
-        radio = QToolButton(self)
-        radio.setObjectName("Heart")
-        radio.setFixedSize(34, 30)
-        radio.setText("📻")
-        radio.setToolTip("Радио по треку: трек + бесконечный подбор трендов его жанра")
-        radio.setCursor(Qt.CursorShape.PointingHandCursor)
-        radio.clicked.connect(self._start_radio)
-        self._radio = radio
-        self._lay.addWidget(radio)
-
     def _refresh_heart(self) -> None:
         liked = self._ctx.storage.is_liked(self._track.id)
         self._heart.setText("♥" if liked else "♡")
@@ -156,10 +146,6 @@ class TrackRow(_Row):
     def _toggle_like(self) -> None:
         self._ctx.storage.toggle_like(self._track)
         self._refresh_heart()
-
-    def _start_radio(self) -> None:
-        from pages import start_track_radio
-        start_track_radio(self._ctx, self._track)
 
     def _activate(self) -> None:
         self._ctx.player.play_queue(list(self._queue), self._index)
