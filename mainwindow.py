@@ -100,14 +100,6 @@ class MainWindow(QMainWindow):
         nav("♥  Медиатека", lambda: self.navigate(pg.CollectionPage(self.ctx, "likes")))
         nav("↺  Недавно", lambda: self.navigate(pg.CollectionPage(self.ctx, "recents")))
         sw.addStretch()
-
-        # --- настройка фона: мягкий (Mica) / сильный (акрил) блюр
-        self._blur_btn = QToolButton()
-        self._blur_btn.setObjectName("NavButton")
-        self._blur_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._refresh_blur_btn()
-        self._blur_btn.clicked.connect(self._cycle_blur)
-        sw.addWidget(self._blur_btn)
         ch.addWidget(sidebar)
 
         self._stack = QStackedWidget()
@@ -136,27 +128,6 @@ class MainWindow(QMainWindow):
     def focus_search(self) -> None:
         self._search.setFocus()
         self._search.selectAll()
-
-    # ---------------------------------------------------------- фон окна
-
-    def blur_setting(self) -> str:
-        try:
-            import storage
-            val = storage.read_setting("blur", "glass")
-            return val if val in ("glass", "flat") else "glass"
-        except Exception:
-            return "glass"
-
-    def _refresh_blur_btn(self) -> None:
-        curt = self.blur_setting() == "flat"
-        self._blur_btn.setText("🪟  Блюр: вкл" if not curt
-                               else "▦  Блюр: выкл — чёткий фон")
-        self._blur_btn.setToolTip("Размытие фона окна (применится после перезапуска)")
-
-    def _cycle_blur(self) -> None:
-        new = "glass" if self.blur_setting() == "flat" else "flat"
-        self.storage.set_setting("blur", new)
-        self._refresh_blur_btn()
 
     def _do_search(self) -> None:
         q = self._search.text().strip()

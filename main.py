@@ -54,14 +54,12 @@ def main() -> int:
     win.resize(1200, 780)
     win.show()
 
-    # Размытие + тёмная рамка (только Windows; иначе обычное окно)
+    # Размытие + тёмная рамка (только Windows; иначе обычное окно).
+    # Блюр всегда включён (BlurBehind) — настройка 'blur' в library.json
+    # оставлена исторически и игнорируется.
     try:
         import window_effects
-        import storage
-        blur = storage.read_setting("blur", "glass")
-        if blur not in ("glass", "flat"):
-            blur = "glass"  # старые значения 'light'/'strong' переводим в стекло
-        mode = window_effects.apply_danya_window_effects(win, blur=blur)
+        mode = window_effects.apply_danya_window_effects(win, blur="glass")
         if mode in ("none", "unsupported"):
             # убираем прозрачность, иначе было бы «чёрное окно-дырка»
             win.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
@@ -70,7 +68,7 @@ def main() -> int:
                   "  Параметры → Персонализация → Цвета → «Эффекты прозрачности» → ВКЛ,\n"
                   "  затем перезапусти DanyaCloud.")
             win.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        print(f"Режим фона окна: {mode} (блюр: {blur})")
+        print(f"Режим фона окна: {mode}")
     except Exception as e:
         print(f"Эффекты окна недоступны ({e}) — работаем без блюра")
 
