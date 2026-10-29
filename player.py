@@ -38,6 +38,9 @@ class Player(QObject):
         self._idx = -1
         self._token = 0  # защита от устаревших ответов при быстрой переключке
         self._repeat = "off"
+        # бесконечное радио: extender вызывается при исчерпании очереди
+        self._extender = None
+        self._extending = False
 
     # ------------------------------------------------------------- stale
 
@@ -57,10 +60,15 @@ class Player(QObject):
 
     # --------------------------------------------------------- управление
 
-    def play_queue(self, tracks: List[Track], index: int = 0) -> None:
+    def play_queue(self, tracks: List[Track], index: int = 0, extender=None) -> None:
+        """Начать играть очередь. extender (если задан) — фон-функция, которая
+        подгружает следующую порцию треков, когда очередь подходит к концу
+        (режим радио). Обычная очередь сбрасывает extender."""
         if not tracks:
             return
         self._queue = list(tracks)
+        self._extender = extender
+        self._extending = False
         self._play_at(index)
 
     def _play_at(self, index: int) -> None:
@@ -111,8 +119,43 @@ class Player(QObject):
     def next(self) -> None:
         if self._idx + 1 < len(self._queue):
             self._play_at(self._idx + 1)
+        elif self._extender is not None:
+            self._extend_and_play()
         else:
             self._media.stop()
+
+    def _extend_and_play(self) -> None:
+        """Радио: очередь кончилась — тянем новую порцию через extender."""
+        if self._extending:
+            return
+        self._extending = True
+        token = self._token
+        ext = self._extender
+
+        def _more():
+            return ext() or []
+
+        def _got(tracks, tk=token):
+            self._extending = False
+            if tk != self._token:
+                return
+            if not tracks:
+                self._extender = None  # suppliers исчерпаны — стоп
+                self._media.stop()
+                return
+            where = len(self._queue)
+            self._queue.extend(tracks)
+            self._play_at(where)
+
+        def _fail(msg, tk=token):
+            self._extending = False
+            if tk != self._token:
+                return
+            self._extender = None
+            self._media.stop()
+            self.error.emit(f"Радио: не удалось загрузить продолжение ({msg})")
+
+        run(_more, _got, _fail, parent=self)
 
     def prev(self) -> None:
         if self._media.position() > 3000 or self._idx == 0:

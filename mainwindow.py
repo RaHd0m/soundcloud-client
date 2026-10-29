@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
             sw.addWidget(b)
 
         nav("⌂  Главная", lambda: self.navigate(pg.SearchPage(self.ctx)))
+        nav("📻  Радио", lambda: self.navigate(pg.RadioPage(self.ctx)))
         nav("♥  Медиатека", lambda: self.navigate(pg.CollectionPage(self.ctx, "likes")))
         nav("↺  Недавно", lambda: self.navigate(pg.CollectionPage(self.ctx, "recents")))
         sw.addStretch()
